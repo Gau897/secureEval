@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SecureEval | AI Code Security & Vulnerability Benchmark",
-  description: "The definitive domain-specific evaluation benchmark for LLM AppSec, vulnerability detection, and secure patch generation.",
+  description: "The open evaluation benchmark for LLM AppSec, vulnerability detection, and secure patch generation.",
 };
 
 export default function RootLayout({
@@ -12,8 +12,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-[#090d16] text-slate-100 antialiased selection:bg-emerald-500/30 selection:text-emerald-300">
+    <html lang="en">
+      <body className="bg-slate-50 text-slate-900 antialiased selection:bg-slate-200 selection:text-slate-900">
         {children}
       </body>
     </html>

@@ -2,19 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  ShieldAlert, 
-  CheckCircle2, 
+  Shield, 
+  CheckCircle, 
   XCircle, 
-  AlertTriangle, 
   Layers, 
   Play, 
-  BarChart3, 
-  Search,
-  Sparkles,
-  Terminal,
-  FileCode,
-  Zap,
-  RefreshCw
+  BarChart2, 
+  Search, 
+  Terminal, 
+  FileCode, 
+  RefreshCw,
+  Info
 } from 'lucide-react';
 import { 
   Radar, 
@@ -47,7 +45,7 @@ export default function Home() {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch initial data
+  // Fetch data
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -78,7 +76,6 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // Run evaluation
   const handleRunEvaluation = async (tcId: string, modelId: string) => {
     try {
       setEvaluating(true);
@@ -98,7 +95,6 @@ export default function Home() {
     }
   };
 
-  // Filtered test cases
   const filteredTestCases = testCases.filter(tc => {
     const matchesCat = filterCategory === 'all' || tc.category.toLowerCase() === filterCategory.toLowerCase();
     const matchesQuery = searchQuery === '' || 
@@ -108,7 +104,6 @@ export default function Home() {
     return matchesCat && matchesQuery;
   });
 
-  // Prepare Radar Chart Data
   const categories = ['Injection', 'SSRF & Network', 'Deserialization', 'Secrets & Auth', 'Access Control', 'Cryptography'];
   const radarData = categories.map(cat => {
     const entry: Record<string, string | number> = { category: cat };
@@ -119,123 +114,113 @@ export default function Home() {
     return entry;
   });
 
-  // Severity Chart Data
   const severityChartData = [
-    { severity: 'Critical', 'Claude 3.5': 100, 'GPT-4o': 98, 'Gemini 1.5 Pro': 92, 'DeepSeek Coder': 70 },
-    { severity: 'High', 'Claude 3.5': 95, 'GPT-4o': 96, 'Gemini 1.5 Pro': 88, 'DeepSeek Coder': 65 },
-    { severity: 'Medium', 'Claude 3.5': 90, 'GPT-4o': 88, 'Gemini 1.5 Pro': 85, 'DeepSeek Coder': 60 }
+    { severity: 'Critical', 'Claude 3.5 Sonnet': 100, 'GPT-4o': 98, 'Gemini 1.5 Pro': 92, 'DeepSeek Coder V2': 70 },
+    { severity: 'High', 'Claude 3.5 Sonnet': 95, 'GPT-4o': 96, 'Gemini 1.5 Pro': 88, 'DeepSeek Coder V2': 65 },
+    { severity: 'Medium', 'Claude 3.5 Sonnet': 90, 'GPT-4o': 88, 'Gemini 1.5 Pro': 85, 'DeepSeek Coder V2': 60 }
   ];
 
   const getSeverityBadge = (sev: string) => {
     switch (sev) {
       case 'critical':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-rose-500/20 text-rose-400 border border-rose-500/30">CRITICAL</span>;
+        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-slate-900 text-white font-mono">CRITICAL</span>;
       case 'high':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">HIGH</span>;
+        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-slate-200 text-slate-800 font-mono">HIGH</span>;
       case 'medium':
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">MEDIUM</span>;
+        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-slate-100 text-slate-700 border border-slate-300 font-mono">MEDIUM</span>;
       default:
-        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">LOW</span>;
+        return <span className="px-2 py-0.5 text-xs font-semibold rounded bg-slate-50 text-slate-600 border border-slate-200 font-mono">LOW</span>;
     }
   };
 
   return (
-    <main className="min-h-screen flex flex-col">
-      {/* Top Navbar */}
-      <header className="border-b border-slate-800/80 bg-slate-950/60 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div className="min-h-screen flex flex-col bg-[#f8fafc] text-slate-900">
+      {/* Header */}
+      <header className="border-b border-slate-200 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-tr from-emerald-600 to-cyan-500 rounded-lg shadow-lg shadow-emerald-500/20">
-              <ShieldAlert className="w-5 h-5 text-white" />
+            <div className="p-1.5 bg-slate-900 text-white rounded">
+              <Shield className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                  SecureEval
-                </span>
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full font-medium">
-                  AppSec v1.0
+                <span className="font-bold text-lg tracking-tight text-slate-900">SecureEval</span>
+                <span className="text-xs font-mono px-2 py-0.5 bg-slate-100 text-slate-600 border border-slate-200 rounded">
+                  Benchmark v1.0
                 </span>
               </div>
-              <p className="text-xs text-slate-400 hidden sm:block">AI Code Security & Vulnerability Benchmark Platform</p>
+              <p className="text-xs text-slate-500 hidden sm:block">AI Code Vulnerability & Security Evaluation Platform</p>
             </div>
           </div>
 
           <div className="flex items-center space-x-3">
             <button 
               onClick={() => fetchData()}
-              className="p-2 text-slate-400 hover:text-white bg-slate-900 border border-slate-800 rounded-md transition-colors"
-              title="Refresh Data"
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm"
+              title="Refresh Benchmark Data"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
             </button>
-            <div className="flex items-center space-x-2 text-xs font-mono text-slate-400 bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-800">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Ground Truth Engine Active</span>
-            </div>
           </div>
         </div>
       </header>
 
-      {/* Main Container */}
-      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-slate-900/90 to-slate-950 border border-slate-800/80 p-6 sm:p-8 shadow-2xl">
-          <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="absolute bottom-0 left-1/3 -mb-8 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-          <div className="relative z-10 max-w-3xl space-y-4">
-            <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Target Persona: AppSec, Tech Leads & AI Engineering Teams</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-              Can AI Models Spot & Remediate Critical Code Vulnerabilities?
+      {/* Main Content */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 space-y-6">
+        {/* Title & Introduction */}
+        <section className="bg-white border border-slate-200 rounded-lg p-6 sm:p-8 shadow-sm">
+          <div className="max-w-3xl space-y-2">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+              AI Code Security Evaluation Leaderboard
             </h1>
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-              Evaluating Claude 3.5 Sonnet, GPT-4o, Gemini 1.5 Pro, and DeepSeek Coder against realistic CWE test cases (SQL Injection, SSRF, Deserialization, Path Traversal, Insecure Crypto) with deterministic AST and ground-truth verification.
+            <p className="text-sm text-slate-600 leading-relaxed">
+              An empirical evaluation measuring how frontier language models identify, localize, and fix real-world software security vulnerabilities (OWASP Top 10 / Common Weakness Enumerations).
             </p>
           </div>
 
-          {/* Quick Metrics Banner */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-6 border-t border-slate-800/60">
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
-              <div className="text-xs font-mono text-slate-400">Highest Eval Score</div>
-              <div className="text-2xl font-bold text-emerald-400 mt-1">
-                {leaderboard[0]?.overall_score || 100}%
+          {/* Metric Overview Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-100">
+            <div className="p-4 rounded border border-slate-200 bg-slate-50/50">
+              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Top Evaluated Model</div>
+              <div className="text-xl font-bold text-slate-900 mt-1">
+                {leaderboard[0]?.model_name || 'Claude 3.5 Sonnet'}
               </div>
-              <div className="text-xs text-slate-500 mt-0.5">{leaderboard[0]?.model_name || 'Claude 3.5 Sonnet'}</div>
+              <div className="text-xs text-slate-500 mt-0.5">Overall: {leaderboard[0]?.overall_score || 100}%</div>
             </div>
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
-              <div className="text-xs font-mono text-slate-400">Curated Test Scenarios</div>
-              <div className="text-2xl font-bold text-cyan-400 mt-1">{testCases.length}</div>
-              <div className="text-xs text-slate-500 mt-0.5">OWASP Top 10 / CWEs</div>
+
+            <div className="p-4 rounded border border-slate-200 bg-slate-50/50">
+              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Test Suite Size</div>
+              <div className="text-xl font-bold text-slate-900 mt-1">{testCases.length} Scenarios</div>
+              <div className="text-xs text-slate-500 mt-0.5">Python, JS, Go, React</div>
             </div>
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
-              <div className="text-xs font-mono text-slate-400">Avg Detection Accuracy</div>
-              <div className="text-2xl font-bold text-purple-400 mt-1">
+
+            <div className="p-4 rounded border border-slate-200 bg-slate-50/50">
+              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Avg Detection Rate</div>
+              <div className="text-xl font-bold text-slate-900 mt-1">
                 {leaderboard.length > 0 
                   ? Math.round(leaderboard.reduce((a, b) => a + b.detection_rate, 0) / leaderboard.length) 
                   : 85}%
               </div>
-              <div className="text-xs text-slate-500 mt-0.5">Across Frontier Models</div>
+              <div className="text-xs text-slate-500 mt-0.5">Across all models</div>
             </div>
-            <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80">
-              <div className="text-xs font-mono text-slate-400">Scoring Engine</div>
-              <div className="text-2xl font-bold text-amber-400 mt-1">100% Deterministic</div>
+
+            <div className="p-4 rounded border border-slate-200 bg-slate-50/50">
+              <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Scoring Method</div>
+              <div className="text-xl font-bold text-slate-900 mt-1">Deterministic</div>
               <div className="text-xs text-slate-500 mt-0.5">AST + CWE Match + Patch</div>
             </div>
           </div>
         </section>
 
-        {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-800 overflow-x-auto gap-2 pb-px">
+        {/* Tab Navigation */}
+        <div className="border-b border-slate-200 flex space-x-1 overflow-x-auto">
           {[
-            { id: 'leaderboard' as TabType, label: 'Model Leaderboard', icon: BarChart3 },
-            { id: 'radar' as TabType, label: 'CWE Category Radar', icon: Layers },
-            { id: 'teardown' as TabType, label: 'Vulnerability Teardown Explorer', icon: FileCode },
-            { id: 'suite' as TabType, label: 'Test Suite Browser', icon: Terminal },
-            { id: 'eval' as TabType, label: 'Run Live Benchmark Simulation', icon: Play },
+            { id: 'leaderboard' as TabType, label: 'Leaderboard', icon: BarChart2 },
+            { id: 'radar' as TabType, label: 'CWE Radar & Categories', icon: Layers },
+            { id: 'teardown' as TabType, label: 'Vulnerability Inspector', icon: FileCode },
+            { id: 'suite' as TabType, label: 'Test Suite Library', icon: Terminal },
+            { id: 'eval' as TabType, label: 'Run Evaluation', icon: Play },
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -243,10 +228,10 @@ export default function Home() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center space-x-2 px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition-all ${
+                className={`flex items-center space-x-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   isActive
-                    ? 'border-emerald-500 text-emerald-400 bg-emerald-500/5'
-                    : 'border-transparent text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                    ? 'border-slate-900 text-slate-900 font-semibold bg-white'
+                    : 'border-transparent text-slate-600 hover:text-slate-900 hover:border-slate-300'
                 }`}
               >
                 <Icon className="w-4 h-4" />
@@ -259,94 +244,81 @@ export default function Home() {
         {/* Tab 1: Leaderboard */}
         {activeTab === 'leaderboard' && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-white">AI Security Benchmark Rankings</h2>
-                <p className="text-xs text-slate-400 mt-1">
-                  Overall scores are calculated based on Vulnerability Detection (40%), CWE Accuracy (20%), Line Localization (20%), and Secure Patching (20%).
-                </p>
+            <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+              <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">Benchmark Rankings</h2>
+                  <p className="text-xs text-slate-500">Scored on Detection (40%), CWE Match (20%), Line Location (20%), and Secure Patch (20%).</p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold text-slate-600">
+                      <th className="py-3 px-4 w-12 text-center">#</th>
+                      <th className="py-3 px-4">Model & Provider</th>
+                      <th className="py-3 px-4 text-center">Score</th>
+                      <th className="py-3 px-4 text-center">Detection</th>
+                      <th className="py-3 px-4 text-center">CWE Match</th>
+                      <th className="py-3 px-4 text-center">Line Location</th>
+                      <th className="py-3 px-4 text-center">Patch Success</th>
+                      <th className="py-3 px-4 text-right">Latency</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {leaderboard.map((model, idx) => (
+                      <tr key={model.model_id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3.5 px-4 text-center font-bold text-slate-700">
+                          {idx + 1}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-slate-900">{model.model_name}</div>
+                          <div className="text-xs text-slate-500 font-mono">{model.provider} • {model.version}</div>
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span className="font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded text-xs">
+                            {model.overall_score}%
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-medium text-slate-700">
+                          {model.detection_rate}%
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-medium text-slate-700">
+                          {model.cwe_accuracy}%
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-medium text-slate-700">
+                          {model.localization_accuracy}%
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-medium text-slate-700">
+                          {model.patch_success_rate}%
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono text-xs text-slate-500">
+                          {model.avg_latency_ms} ms
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/60 shadow-xl">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-800 bg-slate-950/80 text-xs font-mono text-slate-400">
-                    <th className="py-3.5 px-4">Rank & Model</th>
-                    <th className="py-3.5 px-4 text-center">Overall Score</th>
-                    <th className="py-3.5 px-4 text-center">Detection Rate</th>
-                    <th className="py-3.5 px-4 text-center">CWE Accuracy</th>
-                    <th className="py-3.5 px-4 text-center">Line Localization</th>
-                    <th className="py-3.5 px-4 text-center">Patch Success</th>
-                    <th className="py-3.5 px-4 text-right">Avg Latency</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60 text-sm">
-                  {leaderboard.map((model, idx) => (
-                    <tr key={model.model_id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="py-4 px-4">
-                        <div className="flex items-center space-x-3">
-                          <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                            idx === 0 ? 'bg-amber-400/20 text-amber-300 border border-amber-400/40' :
-                            idx === 1 ? 'bg-slate-300/20 text-slate-300 border border-slate-300/40' :
-                            idx === 2 ? 'bg-amber-700/20 text-amber-500 border border-amber-700/40' :
-                            'bg-slate-800 text-slate-400'
-                          }`}>
-                            {idx + 1}
-                          </span>
-                          <div>
-                            <div className="font-semibold text-white flex items-center space-x-2">
-                              <span>{model.model_name}</span>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-mono">
-                                {model.provider}
-                              </span>
-                            </div>
-                            <div className="text-xs text-slate-400 font-mono">{model.version}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <div className="inline-flex items-center space-x-2">
-                          <span className="text-base font-bold text-emerald-400">{model.overall_score}%</span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="font-medium text-slate-200">{model.detection_rate}%</span>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="font-medium text-slate-200">{model.cwe_accuracy}%</span>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="font-medium text-slate-200">{model.localization_accuracy}%</span>
-                      </td>
-                      <td className="py-4 px-4 text-center">
-                        <span className="font-medium text-slate-200">{model.patch_success_rate}%</span>
-                      </td>
-                      <td className="py-4 px-4 text-right font-mono text-xs text-slate-400">
-                        {model.avg_latency_ms} ms
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Severity Breakdown Chart */}
-            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6">
-              <h3 className="text-base font-bold text-white mb-1">Performance by Vulnerability Severity</h3>
-              <p className="text-xs text-slate-400 mb-6">Model accuracy on Critical (e.g. RCE, Auth Bypass) vs High (e.g. IDOR, Path Traversal) vs Medium</p>
+            {/* Severity Breakdown */}
+            <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-900 mb-1">Score Breakdown by Vulnerability Severity</h3>
+              <p className="text-xs text-slate-500 mb-4">Comparison of model accuracy on Critical vs High vs Medium severity vulnerabilities.</p>
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={severityChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="severity" stroke="#64748b" />
-                    <YAxis domain={[0, 100]} stroke="#64748b" />
-                    <Tooltip contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff' }} />
-                    <Legend />
-                    <Bar dataKey="Claude 3.5" fill="#10b981" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="GPT-4o" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="Gemini 1.5 Pro" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="DeepSeek Coder" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                  <BarChart data={severityChartData} margin={{ top: 10, right: 20, left: -10, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="severity" stroke="#64748b" tick={{ fontSize: 12 }} />
+                    <YAxis domain={[0, 100]} stroke="#64748b" tick={{ fontSize: 12 }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#ffffff', borderColor: '#e2e8f0', color: '#0f172a', fontSize: '12px' }} />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Bar dataKey="Claude 3.5 Sonnet" fill="#0f172a" />
+                    <Bar dataKey="GPT-4o" fill="#475569" />
+                    <Bar dataKey="Gemini 1.5 Pro" fill="#94a3b8" />
+                    <Bar dataKey="DeepSeek Coder V2" fill="#cbd5e1" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -354,93 +326,90 @@ export default function Home() {
           </div>
         )}
 
-        {/* Tab 2: Radar Breakdown */}
+        {/* Tab 2: Radar & Category Analysis */}
         {activeTab === 'radar' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-6 flex flex-col items-center">
-              <div className="w-full">
-                <h3 className="text-lg font-bold text-white">CWE Domain Mastery Radar</h3>
-                <p className="text-xs text-slate-400 mt-1">Multi-axis comparison across OWASP/CWE security categories.</p>
-              </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-900">CWE Domain Mastery Radar</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Multi-axis evaluation across 6 core AppSec domains.</p>
+              
               <div className="h-80 w-full mt-4">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadarChart data={radarData}>
-                    <PolarGrid stroke="#334155" />
-                    <PolarAngleAxis dataKey="category" stroke="#94a3b8" tick={{ fontSize: 11 }} />
-                    <PolarRadiusAxis domain={[0, 100]} stroke="#475569" />
-                    <Radar name="Claude 3.5 Sonnet" dataKey="Claude 3.5 Sonnet" stroke="#10b981" fill="#10b981" fillOpacity={0.3} />
-                    <Radar name="GPT-4o" dataKey="GPT-4o" stroke="#06b6d4" fill="#06b6d4" fillOpacity={0.2} />
-                    <Radar name="DeepSeek Coder" dataKey="DeepSeek Coder V2" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.2} />
-                    <Legend />
+                    <PolarGrid stroke="#e2e8f0" />
+                    <PolarAngleAxis dataKey="category" stroke="#475569" tick={{ fontSize: 11 }} />
+                    <PolarRadiusAxis domain={[0, 100]} stroke="#94a3b8" />
+                    <Radar name="Claude 3.5 Sonnet" dataKey="Claude 3.5 Sonnet" stroke="#0f172a" fill="#0f172a" fillOpacity={0.2} />
+                    <Radar name="GPT-4o" dataKey="GPT-4o" stroke="#475569" fill="#475569" fillOpacity={0.15} />
+                    <Radar name="DeepSeek Coder V2" dataKey="DeepSeek Coder V2" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.1} />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-white">Domain-Specific Vulnerability Findings</h3>
-              
-              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+              <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-emerald-400 text-sm">Injection & Deserialization</span>
-                  <span className="text-xs font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-300 rounded">Claude: 100% | GPT: 98%</span>
+                  <span className="font-bold text-sm text-slate-900">SQL Injection & Deserialization</span>
+                  <span className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700">100% Detection</span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Both Claude 3.5 and GPT-4o reliably caught standard SQL Injection (CWE-89) and Pickle RCE (CWE-502). They accurately localized the exact f-string and `pickle.loads` calls.
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Both Claude 3.5 Sonnet and GPT-4o consistently identified raw SQL string interpolation (CWE-89) and insecure Python pickle deserialization (CWE-502).
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+              <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-amber-400 text-sm">SSRF & Private IP Range Validation</span>
-                  <span className="text-xs font-mono px-2 py-0.5 bg-amber-500/10 text-amber-300 rounded">DeepSeek: 15% (Blindspot)</span>
+                  <span className="font-bold text-sm text-slate-900">SSRF & Network Private IP Checks</span>
+                  <span className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700">Nuance Gap</span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  DeepSeek Coder flagged only URL protocol checks but missed internal DNS resolution against cloud metadata ranges (169.254.169.254) and RFC 1918 subnets.
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Smaller coding models checked URL scheme (`http://`) but failed to mandate DNS resolution checks against internal loopback and cloud metadata IPs (169.254.169.254).
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2">
+              <div className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-cyan-400 text-sm">Insecure Direct Object References (IDOR)</span>
-                  <span className="text-xs font-mono px-2 py-0.5 bg-cyan-500/10 text-cyan-300 rounded">GPT-4o & Claude: 98%</span>
+                  <span className="font-bold text-sm text-slate-900">Access Control & IDOR Checks</span>
+                  <span className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-700">High Precision</span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Frontier models successfully identified that missing tenant filter predicates on resource lookups allowed cross-tenant unauthorized data access.
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Frontier models successfully flagged queries that lacked tenant-level filters on entity lookups, recommending multi-tenant scoped database queries.
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Tab 3: Vulnerability Teardown Explorer */}
+        {/* Tab 3: Vulnerability Inspector */}
         {activeTab === 'teardown' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left Case Selector */}
-            <div className="lg:col-span-4 space-y-3">
-              <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider font-mono">Select Test Scenario</h3>
-              <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+            <div className="lg:col-span-4 space-y-2">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500 px-1">Test Scenarios</div>
+              <div className="space-y-1.5 max-h-[600px] overflow-y-auto">
                 {testCases.map(tc => {
                   const isSelected = selectedTestCase?.id === tc.id;
                   return (
                     <div
                       key={tc.id}
                       onClick={() => setSelectedTestCase(tc)}
-                      className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+                      className={`p-3 rounded border cursor-pointer transition-colors ${
                         isSelected
-                          ? 'bg-emerald-500/10 border-emerald-500 text-white'
-                          : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-300'
+                          ? 'bg-slate-900 text-white border-slate-900'
+                          : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-800'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-mono font-bold text-emerald-400">{tc.cwe_id}</span>
-                        {getSeverityBadge(tc.severity)}
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="font-mono font-bold">{tc.cwe_id}</span>
+                        <span className={isSelected ? 'text-slate-300 font-mono text-[10px]' : ''}>
+                          {getSeverityBadge(tc.severity)}
+                        </span>
                       </div>
-                      <div className="text-sm font-semibold truncate">{tc.title}</div>
-                      <div className="flex items-center space-x-2 mt-2 text-[11px] text-slate-400 font-mono">
-                        <span className="uppercase">{tc.language}</span>
-                        <span>•</span>
-                        <span>{tc.category}</span>
+                      <div className="text-xs font-semibold truncate">{tc.title}</div>
+                      <div className="text-[11px] mt-1 font-mono text-slate-400">
+                        {tc.language.toUpperCase()} • {tc.category}
                       </div>
                     </div>
                   );
@@ -448,123 +417,117 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Code Inspector & Diff */}
-            <div className="lg:col-span-8 space-y-6">
+            {/* Right Inspector */}
+            <div className="lg:col-span-8 space-y-4">
               {selectedTestCase ? (
-                <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6 space-y-6">
-                  {/* Scenario Header */}
-                  <div>
-                    <div className="flex items-center justify-between">
+                <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
+                    <div>
                       <div className="flex items-center space-x-2">
-                        <span className="px-2.5 py-1 rounded bg-slate-800 text-emerald-400 font-mono text-xs font-bold">
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-800 font-mono text-xs font-bold rounded">
                           {selectedTestCase.cwe_id}
                         </span>
-                        <h2 className="text-lg font-bold text-white">{selectedTestCase.title}</h2>
+                        <h2 className="text-base font-bold text-slate-900">{selectedTestCase.title}</h2>
                       </div>
-                      {getSeverityBadge(selectedTestCase.severity)}
+                      <p className="text-xs text-slate-500 mt-1">{selectedTestCase.description}</p>
                     </div>
-                    <p className="text-xs text-slate-400 mt-2">{selectedTestCase.description}</p>
+                    {getSeverityBadge(selectedTestCase.severity)}
                   </div>
 
-                  {/* Attack Scenario Alert */}
-                  <div className="p-3.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start space-x-2.5">
-                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  {/* Attack Vector */}
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded text-xs flex items-start space-x-2 text-slate-700">
+                    <Info className="w-4 h-4 text-slate-600 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold">Real-World Exploit Vector: </span>
+                      <span className="font-semibold">Exploit Vector: </span>
                       <span>{selectedTestCase.attack_scenario}</span>
                     </div>
                   </div>
 
-                  {/* Vulnerable Code Snippet */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono text-rose-400 flex items-center space-x-1.5">
-                        <XCircle className="w-3.5 h-3.5" />
-                        <span>Vulnerable Implementation (Lines {selectedTestCase.vulnerability_lines.join(', ')} Flawed)</span>
+                  {/* Vulnerable Code */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs text-slate-700">
+                      <span className="font-semibold flex items-center space-x-1">
+                        <XCircle className="w-3.5 h-3.5 text-slate-600" />
+                        <span>Vulnerable Code (Lines: {selectedTestCase.vulnerability_lines.join(', ')})</span>
                       </span>
-                      <span className="text-[10px] font-mono text-slate-500 uppercase">{selectedTestCase.language}</span>
+                      <span className="font-mono text-[11px] text-slate-400 uppercase">{selectedTestCase.language}</span>
                     </div>
-                    <pre className="p-4 rounded-lg bg-slate-950 border border-rose-950/40 text-xs font-mono text-slate-200 overflow-x-auto leading-relaxed">
+                    <pre className="p-4 bg-slate-900 text-slate-100 rounded text-xs font-mono overflow-x-auto leading-relaxed border border-slate-800">
                       <code>{selectedTestCase.vulnerable_code}</code>
                     </pre>
                   </div>
 
-                  {/* Verified Secure Patch */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-mono text-emerald-400 flex items-center space-x-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Verified Ground-Truth Remediation</span>
+                  {/* Secure Patch */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs text-slate-700">
+                      <span className="font-semibold flex items-center space-x-1">
+                        <CheckCircle className="w-3.5 h-3.5 text-slate-800" />
+                        <span>Ground-Truth Secure Patch</span>
                       </span>
                     </div>
-                    <pre className="p-4 rounded-lg bg-slate-950 border border-emerald-950/40 text-xs font-mono text-emerald-200 overflow-x-auto leading-relaxed">
+                    <pre className="p-4 bg-slate-50 text-slate-900 rounded text-xs font-mono overflow-x-auto leading-relaxed border border-slate-200">
                       <code>{selectedTestCase.expected_patch}</code>
                     </pre>
-                    <p className="text-xs text-slate-400 mt-1 italic">
+                    <p className="text-xs text-slate-500 italic mt-1">
                       💡 {selectedTestCase.patch_explanation}
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="p-12 text-center text-slate-500">Select a test scenario to inspect code.</div>
+                <div className="bg-white border border-slate-200 rounded-lg p-12 text-center text-slate-400 text-sm">
+                  Select a test scenario from the left to inspect.
+                </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Tab 4: Test Suite Browser */}
+        {/* Tab 4: Test Suite Library */}
         {activeTab === 'suite' && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-white">AppSec Test Suite Library</h2>
-                <p className="text-xs text-slate-400 mt-1">Browse and filter verified test scenarios designed for LLM code evaluation.</p>
+          <div className="space-y-4">
+            <div className="bg-white border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
+              <div className="relative w-full sm:w-72">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search by CWE or keyword..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-slate-900"
+                />
               </div>
 
-              {/* Filters */}
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    placeholder="Search CWE or keyword..."
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="pl-9 pr-4 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <select
-                  value={filterCategory}
-                  onChange={e => setFilterCategory(e.target.value)}
-                  className="bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-300 px-3 py-1.5 focus:outline-none focus:border-emerald-500"
-                >
-                  <option value="all">All Categories</option>
-                  <option value="Injection">Injection</option>
-                  <option value="SSRF & Network">SSRF & Network</option>
-                  <option value="Deserialization">Deserialization</option>
-                  <option value="Secrets & Auth">Secrets & Auth</option>
-                  <option value="Access Control">Access Control</option>
-                  <option value="Cryptography">Cryptography</option>
-                </select>
-              </div>
+              <select
+                value={filterCategory}
+                onChange={e => setFilterCategory(e.target.value)}
+                className="w-full sm:w-auto bg-white border border-slate-300 rounded text-xs text-slate-700 px-3 py-1.5 focus:outline-none focus:border-slate-900"
+              >
+                <option value="all">All Categories</option>
+                <option value="Injection">Injection</option>
+                <option value="SSRF & Network">SSRF & Network</option>
+                <option value="Deserialization">Deserialization</option>
+                <option value="Secrets & Auth">Secrets & Auth</option>
+                <option value="Access Control">Access Control</option>
+                <option value="Cryptography">Cryptography</option>
+              </select>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredTestCases.map(tc => (
-                <div key={tc.id} className="p-5 rounded-xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all flex flex-col justify-between space-y-4">
+                <div key={tc.id} className="bg-white border border-slate-200 rounded-lg p-5 shadow-sm flex flex-col justify-between space-y-4 hover:border-slate-300 transition-colors">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-mono font-bold text-emerald-400">{tc.cwe_id}</span>
+                      <span className="text-xs font-mono font-bold text-slate-900">{tc.cwe_id}</span>
                       {getSeverityBadge(tc.severity)}
                     </div>
-                    <h3 className="font-semibold text-white text-sm">{tc.title}</h3>
-                    <p className="text-xs text-slate-400 mt-2 line-clamp-3">{tc.description}</p>
+                    <h3 className="font-semibold text-slate-900 text-sm">{tc.title}</h3>
+                    <p className="text-xs text-slate-600 mt-1.5 line-clamp-2">{tc.description}</p>
                   </div>
 
-                  <div className="space-y-3 pt-3 border-t border-slate-800/80">
-                    <div className="flex flex-wrap gap-1.5">
-                      {tc.tags.map(t => (
-                        <span key={t} className="px-2 py-0.5 rounded bg-slate-800/80 text-slate-300 text-[10px] font-mono">
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex flex-wrap gap-1">
+                      {tc.tags.slice(0, 2).map(t => (
+                        <span key={t} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-mono rounded">
                           #{t}
                         </span>
                       ))}
@@ -574,9 +537,9 @@ export default function Home() {
                         setSelectedTestCase(tc);
                         setActiveTab('teardown');
                       }}
-                      className="w-full text-center py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition-colors"
+                      className="text-xs font-semibold text-slate-900 hover:underline"
                     >
-                      Inspect Code & Patch
+                      Inspect →
                     </button>
                   </div>
                 </div>
@@ -585,44 +548,41 @@ export default function Home() {
           </div>
         )}
 
-        {/* Tab 5: Run Evaluation Simulation */}
+        {/* Tab 5: Evaluation Runner */}
         {activeTab === 'eval' && (
-          <div className="max-w-2xl mx-auto rounded-xl border border-slate-800 bg-slate-900/80 p-6 sm:p-8 space-y-6">
-            <div className="text-center space-y-2">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center">
-                <Zap className="w-6 h-6" />
-              </div>
-              <h2 className="text-xl font-bold text-white">Live Benchmark Evaluator</h2>
-              <p className="text-xs text-slate-400">
-                Trigger an automated evaluation run for a target model against any verified security scenario.
+          <div className="max-w-xl mx-auto bg-white border border-slate-200 rounded-lg p-6 sm:p-8 shadow-sm space-y-6">
+            <div>
+              <h2 className="text-base font-bold text-slate-900">Run Automated Benchmark Evaluation</h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Execute a deterministic evaluation for a target model against a selected security test case.
               </p>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-slate-800">
+            <div className="space-y-4">
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-2">Target AI Model</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">Select Model</label>
                 <select
                   value={selectedModelForEval}
                   onChange={e => setSelectedModelForEval(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-900"
                 >
                   {models.map(m => (
                     <option key={m.id} value={m.id}>
-                      {m.name} ({m.provider} - {m.version})
+                      {m.name} ({m.provider})
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-mono text-slate-400 mb-2">Target Security Test Case</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">Select Security Test Case</label>
                 <select
                   value={selectedTestCase?.id || ''}
                   onChange={e => {
                     const found = testCases.find(tc => tc.id === e.target.value);
                     if (found) setSelectedTestCase(found);
                   }}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-slate-900"
                 >
                   {testCases.map(tc => (
                     <option key={tc.id} value={tc.id}>
@@ -635,36 +595,36 @@ export default function Home() {
               <button
                 disabled={evaluating || !selectedTestCase}
                 onClick={() => selectedTestCase && handleRunEvaluation(selectedTestCase.id, selectedModelForEval)}
-                className={`w-full py-3.5 rounded-lg font-semibold text-sm flex items-center justify-center space-x-2 transition-all shadow-lg ${
+                className={`w-full py-2.5 rounded text-xs font-semibold flex items-center justify-center space-x-2 transition-colors ${
                   evaluating
-                    ? 'bg-emerald-800 text-slate-300 cursor-not-allowed'
-                    : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
+                    ? 'bg-slate-400 text-white cursor-not-allowed'
+                    : 'bg-slate-900 hover:bg-slate-800 text-white shadow-sm'
                 }`}
               >
                 {evaluating ? (
                   <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Executing Evaluation & Scoring Engine...</span>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Scoring in Progress...</span>
                   </>
                 ) : (
                   <>
-                    <Play className="w-4 h-4 fill-current" />
-                    <span>Execute Automated Benchmark Run</span>
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Run Evaluation & Update Leaderboard</span>
                   </>
                 )}
               </button>
             </div>
           </div>
         )}
-      </div>
+      </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-slate-950 py-6 mt-12 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>SecureEval © 2026. Automated LLM Code Security Benchmark.</span>
-          <span className="font-mono text-[11px] text-slate-400">Deterministic Scoring: AST + CWE Rubrics</span>
+      {/* Traditional Minimal Footer */}
+      <footer className="border-t border-slate-200 bg-white py-6 mt-12 text-xs text-slate-500">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>SecureEval • An Open AI Code Vulnerability Benchmark</span>
+          <span className="font-mono text-[11px] text-slate-400">Scoring Engine: AST + CWE Ground Truth</span>
         </div>
       </footer>
-    </main>
+    </div>
   );
 }
