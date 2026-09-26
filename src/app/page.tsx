@@ -30,10 +30,12 @@ import {
   CartesianGrid
 } from 'recharts';
 import { TestCase, ModelBenchmarkSummary, ModelSnapshot } from '@/types';
+import IntroTelemetry from '@/components/IntroTelemetry';
 
 type TabType = 'leaderboard' | 'radar' | 'teardown' | 'suite' | 'eval';
 
 export default function Home() {
+  const [showIntro, setShowIntro] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('leaderboard');
   const [loading, setLoading] = useState(true);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
@@ -135,6 +137,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc] text-slate-900">
+      {/* Intro Telemetry Animation Overlay */}
+      {showIntro && (
+        <IntroTelemetry onComplete={() => setShowIntro(false)} />
+      )}
+
       {/* Header */}
       <header className="border-b border-slate-200 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -154,6 +161,13 @@ export default function Home() {
           </div>
 
           <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowIntro(true)}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono text-slate-600 bg-slate-100 border border-slate-200 rounded hover:bg-slate-200 transition-colors"
+              title="Replay Telemetry Intro Animation"
+            >
+              <span>Replay Intro</span>
+            </button>
             <button 
               onClick={() => fetchData()}
               className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm"
