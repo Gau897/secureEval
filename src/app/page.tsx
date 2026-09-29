@@ -12,7 +12,12 @@ import {
   Terminal, 
   FileCode, 
   RefreshCw,
-  Info
+  Info,
+  Code,
+  Download,
+  Key,
+  Copy,
+  Check
 } from 'lucide-react';
 import { 
   Radar, 
@@ -30,12 +35,13 @@ import {
   CartesianGrid
 } from 'recharts';
 import { TestCase, ModelBenchmarkSummary, ModelSnapshot } from '@/types';
+import { ModelAuditResponse } from '@/lib/ai-connector';
 import IntroTelemetry from '@/components/IntroTelemetry';
 
-type TabType = 'leaderboard' | 'radar' | 'teardown' | 'suite' | 'eval';
+type TabType = 'leaderboard' | 'radar' | 'teardown' | 'suite' | 'eval' | 'audit';
 
 export default function Home() {
-  const [showIntro, setShowIntro] = useState(true);
+  const [showIntro, setShowIntro] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('leaderboard');
   const [loading, setLoading] = useState(true);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
@@ -46,6 +52,22 @@ export default function Home() {
   const [evaluating, setEvaluating] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // "Audit My Code" Studio State
+  const [customCode, setCustomCode] = useState<string>(`// Paste your custom source code here to test AI vulnerability detection
+app.post('/api/user/profile', async (req, res) => {
+  const { userId, role } = req.body;
+  // Dynamic SQL query concatenation
+  const query = "SELECT * FROM users WHERE id = '" + userId + "' AND role = '" + role + "'";
+  const result = await db.query(query);
+  res.json(result);
+});`);
+  const [customLanguage, setCustomLanguage] = useState<string>('javascript');
+  const [customModel, setCustomModel] = useState<string>('claude-3-5-sonnet');
+  const [customApiKey, setCustomApiKey] = useState<string>('');
+  const [auditing, setAuditing] = useState<boolean>(false);
+  const [auditResult, setAuditResult] = useState<ModelAuditResponse | null>(null);
+  const [copiedPatch, setCopiedPatch] = useState<boolean>(false);
 
   // Fetch data
   const fetchData = async () => {
@@ -64,7 +86,7 @@ export default function Home() {
       if (benchData.success) setLeaderboard(benchData.leaderboard);
       if (tcData.success) {
         setTestCases(tcData.data);
-        if (tcData.data.length > 0) setSelectedTestCase(tcData.data[0]);
+        if (tcData.data.length > 0 && !selectedTestCase) setSelectedTestCase(tcData.data[0]);
       }
       if (modData.success) setModels(modData.data);
     } catch (err) {
@@ -78,23 +100,71 @@ export default function Home() {
     fetchData();
   }, []);
 
+  // Run benchmark test case evaluation
   const handleRunEvaluation = async (tcId: string, modelId: string) => {
     try {
       setEvaluating(true);
       const res = await fetch('/api/evaluations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ test_case_id: tcId, model_id: modelId })
+        body: JSON.stringify({ test_case_id: tcId, model_id: modelId, apiKey: customApiKey || undefined })
       });
       const data = await res.json();
       if (data.success) {
         await fetchData();
+        alert(`Evaluation completed! Score: ${data.data.total_score}/100 (${data.data.detected_vulnerability ? 'Vulnerability Detected' : 'Clean'})`);
       }
     } catch (e) {
       console.error('Eval error:', e);
     } finally {
       setEvaluating(false);
     }
+  };
+
+  // Run Custom Code Audit
+  const handleRunCustomAudit = async () => {
+    try {
+      setAuditing(true);
+      setAuditResult(null);
+      const res = await fetch('/api/audit-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: customCode,
+          language: customLanguage,
+          model_id: customModel,
+          apiKey: customApiKey || undefined
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAuditResult(data.data);
+      } else {
+        alert('Audit failed: ' + data.error);
+      }
+    } catch (e) {
+      console.error('Audit error:', e);
+      alert('Failed to execute audit');
+    } finally {
+      setAuditing(false);
+    }
+  };
+
+  // Export JSON Report
+  const handleExportReport = () => {
+    const reportData = {
+      benchmark_title: 'SecureEval AI Security Benchmark Report',
+      generated_at: new Date().toISOString(),
+      models_evaluated: leaderboard,
+      test_suite_coverage: testCases.map(tc => ({ id: tc.id, cwe: tc.cwe_id, title: tc.title, severity: tc.severity }))
+    };
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `secure-eval-benchmark-report-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const filteredTestCases = testCases.filter(tc => {
@@ -160,7 +230,15 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2.5">
+            <button
+              onClick={handleExportReport}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm"
+              title="Export Full Benchmark Report (JSON)"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export Report</span>
+            </button>
             <button
               onClick={() => setShowIntro(true)}
               className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono text-slate-600 bg-slate-100 border border-slate-200 rounded hover:bg-slate-200 transition-colors"
@@ -206,7 +284,7 @@ export default function Home() {
             <div className="p-4 rounded border border-slate-200 bg-slate-50/50">
               <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Test Suite Size</div>
               <div className="text-xl font-bold text-slate-900 mt-1">{testCases.length} Scenarios</div>
-              <div className="text-xs text-slate-500 mt-0.5">Python, JS, Go, React</div>
+              <div className="text-xs text-slate-500 mt-0.5">OWASP Top 10 / CWEs</div>
             </div>
 
             <div className="p-4 rounded border border-slate-200 bg-slate-50/50">
@@ -231,10 +309,11 @@ export default function Home() {
         <div className="border-b border-slate-200 flex space-x-1 overflow-x-auto">
           {[
             { id: 'leaderboard' as TabType, label: 'Leaderboard', icon: BarChart2 },
+            { id: 'audit' as TabType, label: 'Audit My Code (Studio)', icon: Code },
             { id: 'radar' as TabType, label: 'CWE Radar & Categories', icon: Layers },
             { id: 'teardown' as TabType, label: 'Vulnerability Inspector', icon: FileCode },
             { id: 'suite' as TabType, label: 'Test Suite Library', icon: Terminal },
-            { id: 'eval' as TabType, label: 'Run Evaluation', icon: Play },
+            { id: 'eval' as TabType, label: 'Run Benchmark Test', icon: Play },
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -254,6 +333,191 @@ export default function Home() {
             );
           })}
         </div>
+
+        {/* Tab: Audit My Code (Studio) */}
+        {activeTab === 'audit' && (
+          <div className="space-y-6">
+            <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
+              <div className="max-w-2xl space-y-1">
+                <h2 className="text-lg font-bold text-slate-900">Custom Code Security Audit Studio</h2>
+                <p className="text-xs text-slate-600">
+                  Paste any custom source code to test how AI models detect vulnerabilities, pinpoint flawed lines, and generate secure patches in real-time.
+                </p>
+              </div>
+
+              {/* Controls */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4 pt-4 border-t border-slate-100">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Language</label>
+                  <select
+                    value={customLanguage}
+                    onChange={e => setCustomLanguage(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-slate-900"
+                  >
+                    <option value="javascript">JavaScript / Node.js</option>
+                    <option value="python">Python</option>
+                    <option value="go">Go</option>
+                    <option value="typescript">TypeScript</option>
+                    <option value="java">Java</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Target AI Model</label>
+                  <select
+                    value={customModel}
+                    onChange={e => setCustomModel(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-300 rounded px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-slate-900"
+                  >
+                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Anthropic)</option>
+                    <option value="gpt-4o">GPT-4o (OpenAI)</option>
+                    <option value="gemini-1-5-pro">Gemini 1.5 Pro (Google)</option>
+                    <option value="deepseek-coder-v2">DeepSeek Coder V2</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                    <span>API Key (Optional)</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Leave blank for heuristic</span>
+                  </label>
+                  <div className="relative">
+                    <Key className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="password"
+                      placeholder="sk-... or AIza..."
+                      value={customApiKey}
+                      onChange={e => setCustomApiKey(e.target.value)}
+                      className="w-full pl-8 pr-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded text-xs text-slate-900 focus:outline-none focus:border-slate-900"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Code Editor */}
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between text-xs text-slate-600">
+                  <span className="font-semibold">Source Code Editor</span>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setCustomCode(`// Sample: SQL Injection Vulnerability\napp.get("/search", (req, res) => {\n  const q = req.query.q;\n  const sql = "SELECT * FROM items WHERE name = '" + q + "'";\n  db.query(sql, (err, rows) => res.json(rows));\n});`)}
+                      className="text-[11px] text-slate-600 hover:text-slate-900 underline"
+                    >
+                      Sample SQLi
+                    </button>
+                    <span>•</span>
+                    <button
+                      onClick={() => setCustomCode(`// Sample: SSRF Vulnerability\napp.post("/webhook", async (req, res) => {\n  const { url } = req.body;\n  const resp = await fetch(url);\n  res.send(await resp.text());\n});`)}
+                      className="text-[11px] text-slate-600 hover:text-slate-900 underline"
+                    >
+                      Sample SSRF
+                    </button>
+                  </div>
+                </div>
+                <textarea
+                  rows={9}
+                  value={customCode}
+                  onChange={e => setCustomCode(e.target.value)}
+                  className="w-full p-3 bg-slate-900 text-slate-100 rounded font-mono text-xs leading-relaxed focus:outline-none border border-slate-800 focus:border-slate-600"
+                />
+              </div>
+
+              <div className="mt-4 flex justify-end">
+                <button
+                  disabled={auditing}
+                  onClick={handleRunCustomAudit}
+                  className={`px-5 py-2.5 rounded text-xs font-semibold flex items-center space-x-2 transition-colors ${
+                    auditing
+                      ? 'bg-slate-400 text-white cursor-not-allowed'
+                      : 'bg-slate-900 hover:bg-slate-800 text-white shadow-sm'
+                  }`}
+                >
+                  {auditing ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Auditing Code...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="w-3.5 h-3.5" />
+                      <span>Execute Security Audit</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Audit Results Panel */}
+            {auditResult && (
+              <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2.5 py-1 rounded text-xs font-mono font-bold ${
+                      auditResult.detected_vulnerability 
+                        ? 'bg-slate-900 text-white' 
+                        : 'bg-slate-100 text-slate-700'
+                    }`}>
+                      {auditResult.detected_vulnerability ? 'VULNERABILITY DETECTED' : 'CODE APPEARS SECURE'}
+                    </span>
+                    {auditResult.identified_cwe && (
+                      <span className="px-2 py-0.5 bg-slate-100 text-slate-800 font-mono text-xs rounded border border-slate-200">
+                        {auditResult.identified_cwe}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs font-mono text-slate-500">
+                    Latency: {auditResult.latency_ms} ms
+                  </div>
+                </div>
+
+                {auditResult.detected_vulnerability && (
+                  <>
+                    <div className="space-y-1">
+                      <h3 className="text-sm font-bold text-slate-900">{auditResult.identified_cwe_name || 'Security Weakness'}</h3>
+                      <p className="text-xs text-slate-600">{auditResult.explanation}</p>
+                    </div>
+
+                    {auditResult.attack_scenario && (
+                      <div className="p-3 bg-slate-50 border border-slate-200 rounded text-xs space-y-1">
+                        <span className="font-semibold text-slate-800">Exploitation Vector:</span>
+                        <div className="font-mono text-slate-700 bg-white p-2 rounded border border-slate-200 mt-1">
+                          {auditResult.attack_scenario}
+                        </div>
+                      </div>
+                    )}
+
+                    {auditResult.suggested_patch && (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs text-slate-700">
+                          <span className="font-semibold flex items-center space-x-1">
+                            <CheckCircle className="w-3.5 h-3.5 text-slate-900" />
+                            <span>Remediation / Secure Replacement</span>
+                          </span>
+                          <button
+                            onClick={() => {
+                              if (auditResult?.suggested_patch) {
+                                navigator.clipboard.writeText(auditResult.suggested_patch);
+                                setCopiedPatch(true);
+                                setTimeout(() => setCopiedPatch(false), 2000);
+                              }
+                            }}
+                            className="inline-flex items-center space-x-1 text-[11px] font-mono text-slate-600 hover:text-slate-900"
+                          >
+                            {copiedPatch ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                            <span>{copiedPatch ? 'Copied' : 'Copy Patch'}</span>
+                          </button>
+                        </div>
+                        <pre className="p-4 bg-slate-50 text-slate-900 rounded text-xs font-mono overflow-x-auto leading-relaxed border border-slate-200">
+                          <code>{auditResult.suggested_patch}</code>
+                        </pre>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tab 1: Leaderboard */}
         {activeTab === 'leaderboard' && (

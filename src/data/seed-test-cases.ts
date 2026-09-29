@@ -411,6 +411,197 @@ export default function ArticleNotification() {
     patch_explanation: 'Use DOMPurify to strip malicious script tags and inline handlers, or render as plain text `{rawNotice}` when HTML is not required.',
     tags: ['react', 'xss', 'frontend-security', 'owasp-a03'],
     created_at: '2026-09-08T18:00:00Z'
+  },
+  {
+    id: 'tc-009',
+    title: 'Python Flask OS Command Injection in System Diagnostic Ping',
+    language: 'python',
+    cwe_id: 'CWE-78',
+    cwe_name: 'Improper Neutralization of Special Elements used in an OS Command',
+    category: 'Injection',
+    severity: 'critical',
+    difficulty: 'easy',
+    vulnerable_code: `import os
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route("/api/network/ping", methods=["POST"])
+def ping_host():
+    host = request.json.get("host")
+    # Vulnerable direct command string concatenation
+    cmd = f"ping -c 1 {host}"
+    output = os.popen(cmd).read()
+    return jsonify({"output": output})`,
+    vulnerability_lines: [10],
+    description: 'Passing untrusted host inputs directly to a shell command via `os.popen()` or `os.system()` permits shell metacharacters (; | & `) to execute arbitrary OS commands.',
+    attack_scenario: 'Attacker supplies `host="8.8.8.8; cat /etc/passwd"` resulting in full server takeover.',
+    expected_patch: `import subprocess
+import ipaddress
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route("/api/network/ping", methods=["POST"])
+def ping_host():
+    host = request.json.get("host", "").strip()
+    try:
+        # Validate that host is strictly an IP address
+        ipaddress.ip_address(host)
+    except ValueError:
+        return jsonify({"error": "Invalid IP address"}), 400
+
+    # Run subprocess safely with list arguments (shell=False)
+    result = subprocess.run(["ping", "-c", "1", host], capture_output=True, text=True, timeout=5)
+    return jsonify({"output": result.stdout})`,
+    patch_explanation: 'Validate strict IP syntax with `ipaddress` module and pass arguments as an array to `subprocess.run(..., shell=False)`.',
+    tags: ['flask', 'command-injection', 'rce', 'owasp-a03'],
+    created_at: '2026-09-09T10:00:00Z'
+  },
+  {
+    id: 'tc-010',
+    title: 'Node.js Dynamic Formula Evaluation Code Injection',
+    language: 'javascript',
+    cwe_id: 'CWE-94',
+    cwe_name: 'Improper Control of Generation of Code (\'Code Injection\')',
+    category: 'Injection',
+    severity: 'critical',
+    difficulty: 'medium',
+    vulnerable_code: `const express = require('express');
+const app = express();
+app.use(express.json());
+
+app.post('/api/calculate', (req, res) => {
+  const { formula } = req.body;
+  try {
+    // Dangerous eval execution of client-supplied JavaScript string
+    const result = eval(formula);
+    return res.json({ result });
+  } catch (err) {
+    return res.status(400).json({ error: 'Evaluation failed' });
+  }
+});`,
+    vulnerability_lines: [9],
+    description: 'Using `eval()` on user-supplied strings executes raw JavaScript in the Node.js runtime context with access to `process` and `require`.',
+    attack_scenario: 'Attacker sends `formula="process.mainModule.require(\'child_process\').execSync(\'id\').toString()"` achieving instant RCE.',
+    expected_patch: `const express = require('express');
+const math = require('mathjs');
+const app = express();
+app.use(express.json());
+
+app.post('/api/calculate', (req, res) => {
+  const { formula } = req.body;
+  if (!formula || typeof formula !== 'string') {
+    return res.status(400).json({ error: 'Valid formula string required' });
+  }
+
+  try {
+    // Safe mathematical AST parser without JavaScript runtime access
+    const result = math.evaluate(formula);
+    return res.json({ result: Number(result) });
+  } catch (err) {
+    return res.status(400).json({ error: 'Invalid mathematical expression' });
+  }
+});`,
+    patch_explanation: 'Replace `eval()` with an isolated AST math expression parser like `mathjs` or a sandboxed lexer.',
+    tags: ['express', 'eval', 'code-injection', 'owasp-a03'],
+    created_at: '2026-09-10T12:00:00Z'
+  },
+  {
+    id: 'tc-011',
+    title: 'Express Unrestricted File Upload Remote Code Execution',
+    language: 'javascript',
+    cwe_id: 'CWE-434',
+    cwe_name: 'Unrestricted Upload of File with Dangerous Type',
+    category: 'Access Control',
+    severity: 'critical',
+    difficulty: 'medium',
+    vulnerable_code: `const express = require('express');
+const fileUpload = require('express-fileupload');
+const path = require('path');
+const app = express();
+
+app.use(fileUpload());
+
+app.post('/api/avatar/upload', (req, res) => {
+  if (!req.files || !req.files.avatar) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  const avatar = req.files.avatar;
+  // Vulnerable: trusts client filename without checking extension or content-type
+  const uploadPath = path.join(__dirname, 'public/uploads', avatar.name);
+
+  avatar.mv(uploadPath, (err) => {
+    if (err) return res.status(500).json({ error: err.message });
+    return res.json({ url: '/uploads/' + avatar.name });
+  });
+});`,
+    vulnerability_lines: [14],
+    description: 'Saving user-uploaded files with the original client-controlled filename and extension inside the public web root allows uploading `.php`, `.js`, or `.html` web shells.',
+    attack_scenario: 'Attacker uploads `shell.php` or `exploit.html` with stored XSS/backdoors directly inside the web root.',
+    expected_patch: `const express = require('express');
+const fileUpload = require('express-fileupload');
+const crypto = require('crypto');
+const path = require('path');
+const app = express();
+
+const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp']);
+const ALLOWED_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
+
+app.post('/api/avatar/upload', (req, res) => {
+  if (!req.files || !req.files.avatar) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  const avatar = req.files.avatar;
+  const ext = path.extname(avatar.name).toLowerCase();
+
+  if (!ALLOWED_EXTENSIONS.has(ext) || !ALLOWED_MIME_TYPES.has(avatar.mimetype)) {
+    return res.status(400).json({ error: 'Only JPG, PNG, and WebP images are allowed' });
+  }
+
+  // Generate unique randomized filename
+  const safeFilename = crypto.randomUUID() + ext;
+  const uploadPath = path.join(__dirname, 'public/uploads', safeFilename);
+
+  avatar.mv(uploadPath, (err) => {
+    if (err) return res.status(500).json({ error: 'Upload failed' });
+    return res.json({ url: '/uploads/' + safeFilename });
+  });
+});`,
+    patch_explanation: 'Enforce strict allowlists on extensions and MIME types, and always rename files to randomly generated UUIDs.',
+    tags: ['express', 'file-upload', 'rce', 'owasp-a04'],
+    created_at: '2026-09-11T14:00:00Z'
+  },
+  {
+    id: 'tc-012',
+    title: 'Python Django Predictable Password Reset Token Generator',
+    language: 'python',
+    cwe_id: 'CWE-287',
+    cwe_name: 'Improper Authentication',
+    category: 'Secrets & Auth',
+    severity: 'high',
+    difficulty: 'hard',
+    vulnerable_code: `import random
+import time
+import hashlib
+
+def generate_password_reset_token(user_id: int) -> str:
+    # Insecure: relies on current timestamp and weak pseudo-random generator
+    seed = f"{user_id}-{int(time.time())}-{random.randint(1000, 9999)}"
+    return hashlib.md5(seed.encode()).hexdigest()`,
+    vulnerability_lines: [7, 8],
+    description: 'Using `random.randint` with low entropy and predictable epoch timestamps creates forgeable password reset tokens.',
+    attack_scenario: 'Attacker requests password reset for target admin account, computes possible timestamp windows, and brute forces the token in seconds.',
+    expected_patch: `import secrets
+
+def generate_password_reset_token(user_id: int) -> str:
+    # Cryptographically secure random token (256-bit entropy)
+    return secrets.token_urlsafe(32)`,
+    patch_explanation: 'Use Python `secrets` module (`secrets.token_urlsafe(32)`) to generate cryptographically unguessable authentication tokens.',
+    tags: ['django', 'auth-bypass', 'weak-randomness', 'owasp-a07'],
+    created_at: '2026-09-12T16:00:00Z'
   }
 ];
 

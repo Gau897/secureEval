@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { EvaluationRun } from '@/types';
+import { auditCodeWithModel } from '@/lib/ai-connector';
+import { scoreModelAudit } from '@/lib/scoring-engine';
 
 export async function GET(request: NextRequest) {
   try {
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { model_id, test_case_id } = body;
+    const { model_id, test_case_id, apiKey } = body;
 
     if (!model_id || !test_case_id) {
       return NextResponse.json(
@@ -37,46 +38,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Evaluation scoring simulation engine
-    const detected = Math.random() > 0.15;
-    const correctCwe = detected && Math.random() > 0.2;
-    const correctLines = detected && Math.random() > 0.25;
-    const patchSecure = detected && Math.random() > 0.3;
+    // 1. Run AI Model Audit
+    const auditResponse = await auditCodeWithModel(
+      {
+        model_id,
+        code_snippet: testCase.vulnerable_code,
+        language: testCase.language
+      },
+      apiKey
+    );
 
-    const score_detection = detected ? 40 : 0;
-    const score_cwe = correctCwe ? 20 : 0;
-    const score_localization = correctLines ? 20 : 0;
-    const score_patch = patchSecure ? 20 : 0;
-    const total_score = score_detection + score_cwe + score_localization + score_patch;
+    // 2. Score using Deterministic Ground-Truth Engine
+    const evaluationRun = scoreModelAudit(testCase, auditResponse, model_id);
 
-    const newRun: EvaluationRun = {
-      id: `eval-${Date.now()}`,
-      test_case_id,
-      model_id,
-      prompt_used: `Audit the code snippet for ${testCase.cwe_name} and identify root cause lines.`,
-      raw_response: detected
-        ? `Identified vulnerability: ${testCase.cwe_name} (${testCase.cwe_id}) on lines ${testCase.vulnerability_lines.join(', ')}.\nSuggested patch:\n${testCase.expected_patch}`
-        : `No critical security flaws were detected in the provided code snippet.`,
-      detected_vulnerability: detected,
-      identified_cwe: detected ? testCase.cwe_id : undefined,
-      correct_cwe: correctCwe,
-      identified_lines: detected ? testCase.vulnerability_lines : [],
-      correct_lines: correctLines,
-      patch_provided: detected,
-      patch_secure: patchSecure,
-      patch_code: patchSecure ? testCase.expected_patch : undefined,
-      score_detection,
-      score_cwe,
-      score_localization,
-      score_patch,
-      total_score,
-      latency_ms: Math.floor(Math.random() * 800) + 700,
-      timestamp: new Date().toISOString()
-    };
+    // 3. Save to database
+    db.addEvaluationRun(evaluationRun);
 
-    db.addEvaluationRun(newRun);
-
-    return NextResponse.json({ success: true, data: newRun });
+    return NextResponse.json({ success: true, data: evaluationRun });
   } catch (error) {
     return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
   }
