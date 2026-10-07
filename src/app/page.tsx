@@ -11,13 +11,16 @@ import {
   Search, 
   Terminal, 
   FileCode, 
-  RefreshCw,
-  Info,
-  Code,
-  Download,
-  Key,
-  Copy,
-  Check
+  RefreshCw, 
+  Info, 
+  Code, 
+  Download, 
+  Key, 
+  Copy, 
+  Check,
+  Swords,
+  Plus,
+  Printer
 } from 'lucide-react';
 import { 
   Radar, 
@@ -37,8 +40,11 @@ import {
 import { TestCase, ModelBenchmarkSummary, ModelSnapshot } from '@/types';
 import { ModelAuditResponse } from '@/lib/ai-connector';
 import IntroTelemetry from '@/components/IntroTelemetry';
+import BattleArena from '@/components/BattleArena';
+import NewTestCaseModal from '@/components/NewTestCaseModal';
+import ExecutiveReportModal from '@/components/ExecutiveReportModal';
 
-type TabType = 'leaderboard' | 'radar' | 'teardown' | 'suite' | 'eval' | 'audit';
+type TabType = 'leaderboard' | 'arena' | 'audit' | 'radar' | 'teardown' | 'suite' | 'eval';
 
 export default function Home() {
   const [showIntro, setShowIntro] = useState(false);
@@ -52,6 +58,10 @@ export default function Home() {
   const [evaluating, setEvaluating] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Modals state
+  const [isNewTestCaseModalOpen, setIsNewTestCaseModalOpen] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   // "Audit My Code" Studio State
   const [customCode, setCustomCode] = useState<string>(`// Paste your custom source code here to test AI vulnerability detection
@@ -212,8 +222,26 @@ app.post('/api/user/profile', async (req, res) => {
         <IntroTelemetry onComplete={() => setShowIntro(false)} />
       )}
 
+      {/* New Test Case Modal */}
+      <NewTestCaseModal
+        isOpen={isNewTestCaseModalOpen}
+        onClose={() => setIsNewTestCaseModalOpen(false)}
+        onSuccess={newCase => {
+          setTestCases(prev => [newCase, ...prev]);
+          alert(`Test scenario "${newCase.title}" added to suite!`);
+        }}
+      />
+
+      {/* Executive Report Modal */}
+      <ExecutiveReportModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        leaderboard={leaderboard}
+        testCases={testCases}
+      />
+
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-slate-200 bg-white no-print">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="p-1.5 bg-slate-900 text-white rounded">
@@ -230,29 +258,44 @@ app.post('/api/user/profile', async (req, res) => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2.5">
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setIsReportModalOpen(true)}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-slate-900 bg-slate-100 border border-slate-300 rounded hover:bg-slate-200 transition-colors shadow-sm"
+              title="View & Print Executive Security Audit Report"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>PDF Report</span>
+            </button>
+            <button
+              onClick={() => setIsNewTestCaseModalOpen(true)}
+              className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 rounded hover:bg-slate-800 transition-colors shadow-sm"
+              title="Submit New CWE Scenario"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Submit Case</span>
+            </button>
             <button
               onClick={handleExportReport}
               className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm"
               title="Export Full Benchmark Report (JSON)"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Export Report</span>
+              <span className="hidden sm:inline">Export</span>
             </button>
             <button
               onClick={() => setShowIntro(true)}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-mono text-slate-600 bg-slate-100 border border-slate-200 rounded hover:bg-slate-200 transition-colors"
+              className="inline-flex items-center space-x-1.5 px-2.5 py-1.5 text-xs font-mono text-slate-600 bg-slate-50 border border-slate-200 rounded hover:bg-slate-100 transition-colors"
               title="Replay Telemetry Intro Animation"
             >
-              <span>Replay Intro</span>
+              <span>Replay</span>
             </button>
             <button 
               onClick={() => fetchData()}
-              className="inline-flex items-center space-x-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm"
+              className="inline-flex items-center p-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded hover:bg-slate-50 transition-colors shadow-sm"
               title="Refresh Benchmark Data"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
             </button>
           </div>
         </div>
@@ -284,7 +327,7 @@ app.post('/api/user/profile', async (req, res) => {
             <div className="p-4 rounded border border-slate-200 bg-slate-50/50">
               <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Test Suite Size</div>
               <div className="text-xl font-bold text-slate-900 mt-1">{testCases.length} Scenarios</div>
-              <div className="text-xs text-slate-500 mt-0.5">OWASP Top 10 / CWEs</div>
+              <div className="text-xs text-slate-500 mt-0.5">Python, JS, Go, React</div>
             </div>
 
             <div className="p-4 rounded border border-slate-200 bg-slate-50/50">
@@ -306,9 +349,10 @@ app.post('/api/user/profile', async (req, res) => {
         </section>
 
         {/* Tab Navigation */}
-        <div className="border-b border-slate-200 flex space-x-1 overflow-x-auto">
+        <div className="border-b border-slate-200 flex space-x-1 overflow-x-auto no-print">
           {[
             { id: 'leaderboard' as TabType, label: 'Leaderboard', icon: BarChart2 },
+            { id: 'arena' as TabType, label: 'Model Battle Arena', icon: Swords },
             { id: 'audit' as TabType, label: 'Audit My Code (Studio)', icon: Code },
             { id: 'radar' as TabType, label: 'CWE Radar & Categories', icon: Layers },
             { id: 'teardown' as TabType, label: 'Vulnerability Inspector', icon: FileCode },
@@ -333,6 +377,15 @@ app.post('/api/user/profile', async (req, res) => {
             );
           })}
         </div>
+
+        {/* Tab: Battle Arena */}
+        {activeTab === 'arena' && (
+          <BattleArena
+            testCases={testCases}
+            models={models}
+            apiKey={customApiKey || undefined}
+          />
+        )}
 
         {/* Tab: Audit My Code (Studio) */}
         {activeTab === 'audit' && (
@@ -775,19 +828,29 @@ app.post('/api/user/profile', async (req, res) => {
                 />
               </div>
 
-              <select
-                value={filterCategory}
-                onChange={e => setFilterCategory(e.target.value)}
-                className="w-full sm:w-auto bg-white border border-slate-300 rounded text-xs text-slate-700 px-3 py-1.5 focus:outline-none focus:border-slate-900"
-              >
-                <option value="all">All Categories</option>
-                <option value="Injection">Injection</option>
-                <option value="SSRF & Network">SSRF & Network</option>
-                <option value="Deserialization">Deserialization</option>
-                <option value="Secrets & Auth">Secrets & Auth</option>
-                <option value="Access Control">Access Control</option>
-                <option value="Cryptography">Cryptography</option>
-              </select>
+              <div className="flex items-center space-x-2 w-full sm:w-auto">
+                <select
+                  value={filterCategory}
+                  onChange={e => setFilterCategory(e.target.value)}
+                  className="w-full sm:w-auto bg-white border border-slate-300 rounded text-xs text-slate-700 px-3 py-1.5 focus:outline-none focus:border-slate-900"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="Injection">Injection</option>
+                  <option value="SSRF & Network">SSRF & Network</option>
+                  <option value="Deserialization">Deserialization</option>
+                  <option value="Secrets & Auth">Secrets & Auth</option>
+                  <option value="Access Control">Access Control</option>
+                  <option value="Cryptography">Cryptography</option>
+                </select>
+
+                <button
+                  onClick={() => setIsNewTestCaseModalOpen(true)}
+                  className="inline-flex items-center space-x-1 px-3 py-1.5 bg-slate-900 text-white rounded text-xs font-semibold hover:bg-slate-800 transition-colors whitespace-nowrap"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Scenario</span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -897,7 +960,7 @@ app.post('/api/user/profile', async (req, res) => {
       </main>
 
       {/* Traditional Minimal Footer */}
-      <footer className="border-t border-slate-200 bg-white py-6 mt-12 text-xs text-slate-500">
+      <footer className="border-t border-slate-200 bg-white py-6 mt-12 text-xs text-slate-500 no-print">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>SecureEval • An Open AI Code Vulnerability Benchmark</span>
           <span className="font-mono text-[11px] text-slate-400">Scoring Engine: AST + CWE Ground Truth</span>
